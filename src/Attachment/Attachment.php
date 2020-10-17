@@ -22,13 +22,14 @@ use Czim\Paperclip\Events\TemporaryFileFailedToBeDeletedEvent;
 use Czim\Paperclip\Exceptions\VariantProcessFailureException;
 use Czim\Paperclip\Path\InterpolatingTarget;
 use Exception;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Serializable;
 
-class Attachment implements AttachmentInterface, Serializable
+class Attachment implements AttachmentInterface, Serializable, Arrayable
 {
-    const NULL_ATTACHMENT = '44e1ec68e2a43f32741cbd4cb4d77c79e28d6a5c';
+    public const NULL_ATTACHMENT = '44e1ec68e2a43f32741cbd4cb4d77c79e28d6a5c';
 
     /**
      * @var AttachableInterface|Model
@@ -1180,5 +1181,13 @@ class Attachment implements AttachmentInterface, Serializable
         $this->deleteTarget     = $data['deleteTarget'];
 
         $this->setStorage($data['storage']);
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'name'   => $this->name(),
+            'config' => $this->config->toArray(),
+        ];
     }
 }

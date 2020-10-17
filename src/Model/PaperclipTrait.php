@@ -8,11 +8,12 @@ use Czim\Paperclip\Contracts\AttachableInterface;
 use Czim\Paperclip\Contracts\AttachmentFactoryInterface;
 use Czim\Paperclip\Contracts\AttachmentInterface;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Arr;
 
+/**
+ * @mixin AttachableInterface
+ */
 trait PaperclipTrait
 {
-
     /**
      * All of the model's current attached files.
      *
@@ -46,8 +47,6 @@ trait PaperclipTrait
      */
     public function hasAttachedFile($name, array $options = [])
     {
-        /** @var Model $this */
-
         /** @var AttachmentFactoryInterface $factory */
         $factory = app(AttachmentFactoryInterface::class);
 
@@ -56,10 +55,7 @@ trait PaperclipTrait
         $this->attachedFiles[ $name ] = $attachment;
     }
 
-    /**
-     * Registers the observers.
-     */
-    public static function bootPaperclipTrait()
+    public static function bootPaperclipTrait(): void
     {
         static::saved(function ($model) {
             /** @var Model|AttachableInterface $model */
@@ -110,16 +106,24 @@ trait PaperclipTrait
      * Handle the dynamic retrieval of attachment objects.
      *
      * @param string $key
-     *
      * @return mixed
      */
     public function getAttribute($key)
     {
-        if (array_key_exists($key, $this->attachedFiles)) {
+        if (array_key_exists($key, $this->attachedFiles) && $this->areAttachmentAttributesLoaded($key)) {
             return $this->attachedFiles[ $key ];
         }
 
         return parent::getAttribute($key);
+    }
+
+    protected function areAttachmentAttributesLoaded(string $attachment): bool
+    {
+        if (! array_key_exists($attachment, $this->attachedFiles)) {
+            return false;
+        }
+
+        return array_key_exists("{$attachment}_file_name", $this->attributes);
     }
 
     /**
@@ -227,7 +231,12 @@ trait PaperclipTrait
      */
     public function mergeFileAttributes()
     {
-        $this->attributes = $this->attributes + $this->getAttachedFiles();
+        $this->attributes += array_filter(
+            $this->getAttachedFiles(),
+            function (AttachmentInterface $attachment) {
+                return $this->areAttachmentAttributesLoaded($attachment->name());
+            }
+        );
     }
 
     /**

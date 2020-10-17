@@ -95,6 +95,8 @@ class PaperclipBasicAttachmentTest extends ProvisionedTestCase
     {
         $model = $this->getTestModel();
 
+        dd($model->getAttributes());
+
         // Store an initial file
         $model->attachment = new SplFileInfo($this->getTestFilePath());
         $model->save();
@@ -102,6 +104,8 @@ class PaperclipBasicAttachmentTest extends ProvisionedTestCase
         $processedFilePath = $this->getUploadedAttachmentPath($model);
 
         $attributes = $model->getAttributes();
+
+        dd(array_keys($attributes));
 
         static::assertArrayHasKey('attachment', $attributes);
         static::assertArrayHasKey('image', $attributes);
@@ -463,4 +467,51 @@ class PaperclipBasicAttachmentTest extends ProvisionedTestCase
         $model->attachment = new SplFileInfo($this->getTestFilePath('empty.gif'));
     }
 
+    // ------------------------------------------------------------------------------
+    //      Edge cases
+    // ------------------------------------------------------------------------------
+
+    /**
+     * If a select is performed on a subset of columns, and paperclip values are omitted,
+     * this has been known to cause pretty bad issues. Developers are responsible for
+     * making sure either all or none of the paperclip attributes are present,
+     * but if none are loaded, this should not cause any issues.
+     *
+     * @test
+     */
+    function it_gracefully_handles_when_a_model_was_loaded_without_paperclip_attribute_columns()
+    {
+        $model = $this->getTestModel();
+
+        // Store an initial file
+        $model->attachment = new SplFileInfo($this->getTestFilePath());
+        $model->save();
+
+        static::assertArrayHasKey('attachment', $model->getAttributes(), 'Attachment should be present normally');
+
+        $freshPartialModel = $model->newModelQuery()->select('id')->where('id', $model->getKey())->first();
+
+        static::assertEquals(
+            ['id' => $model->getKey()],
+            $freshPartialModel->getAttributes(),
+            'An partial instance without the file name property should not have the attachment'
+        );
+
+        $freshPartialModel = $model->newModelQuery()
+            ->select(['id', 'attachment_file_name',])
+            ->where('id', $model->getKey())
+            ->first();
+
+        static::assertArrayHasKey(
+            'attachment',
+            $freshPartialModel->getAttributes(),
+            'An partial instance with the file name property should have the attachment'
+        );
+
+
+        $processedFilePath = $this->getUploadedAttachmentPath($model);
+        if (file_exists($processedFilePath)) {
+            unlink($processedFilePath);
+        }
+    }
 }

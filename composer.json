@@ -5,7 +5,7 @@
     "homepage": "https://github.com/czim",
     "require": {
         "php": "^8.1",
-        "czim/file-handling": "^2.0",
+        "czim/file-handling": "master",
         "ext-json": "*"
     },
     "require-dev": {
@@ -36,6 +36,12 @@
             ]
         }
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/Cibsmart/file-handling.git"
+        }
+    ],
     "minimum-stability": "dev",
     "prefer-stable": true
 }

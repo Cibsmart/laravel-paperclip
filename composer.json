@@ -36,12 +36,6 @@
             ]
         }
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/Cibsmart/file-handling.git"
-        }
-    ],
     "minimum-stability": "dev",
     "prefer-stable": true
 }
